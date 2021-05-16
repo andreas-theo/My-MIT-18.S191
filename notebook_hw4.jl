@@ -604,7 +604,10 @@ md"""
 
 # ╔═╡ 46133a74-04b1-11eb-0b46-0bc74e564680
 function sweep!(agents::Vector{Agent}, infection::AbstractInfection)
-	# your code here
+	N = length(agents)
+	for _ in 1:N
+		interact!(agent, source, infection)
+	end
 end
 
 # ╔═╡ 95771ce2-0403-11eb-3056-f1dc3a8b7ec3
