@@ -591,7 +591,10 @@ You should not use any global variables inside the functions: Each function must
 
 # ╔═╡ 2ade2694-0425-11eb-2fb2-390da43d9695
 function step!(agents::Vector{Agent}, infection::AbstractInfection)
-	# your code here
+	agent = rand(agents)
+	source = rand(source)
+	interact!(agent, source, infection)
+	return agents
 end
 
 # ╔═╡ 955321de-0403-11eb-04ce-fb1670dfbb9e
