@@ -592,7 +592,7 @@ You should not use any global variables inside the functions: Each function must
 # ╔═╡ 2ade2694-0425-11eb-2fb2-390da43d9695
 function step!(agents::Vector{Agent}, infection::AbstractInfection)
 	agent = rand(agents)
-	source = rand(source)
+	source = rand(agents)
 	interact!(agent, source, infection)
 	return agents
 end
@@ -606,7 +606,7 @@ md"""
 function sweep!(agents::Vector{Agent}, infection::AbstractInfection)
 	N = length(agents)
 	for _ in 1:N
-		interact!(agent, source, infection)
+		step!(agents, infection)
 	end
 end
 
@@ -628,9 +628,16 @@ _Feel free to store the counts in a different way, as long as the return type is
 # ╔═╡ 887d27fc-04bc-11eb-0ab9-eb95ef9607f8
 function simulation(N::Integer, T::Integer, infection::AbstractInfection)
 
-	# your code here
+	agents = generate_agents(N)
+	S_counts, I_counts, R_counts = zeros(Int, T), zeros(Int, T), zeros(Int, T)
+	for t in 1:T
+		sweep!(agents, infection)
+		S_counts[t] = count(a -> is_susceptible(a), agents)
+		I_counts[t] = count(a -> is_infected(a), agents)
+		R_counts[t] = count(a -> a.status == R, agents)
+	end
 	
-	return (S=missing, I=missing, R=missing)
+	return (S=S_counts, I=I_counts, R=R_counts)
 end
 
 # ╔═╡ b92f1cec-04ae-11eb-0072-3535d1118494
