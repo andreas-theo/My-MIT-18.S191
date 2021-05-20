@@ -726,7 +726,14 @@ let
 	for sim in simulations
 		plot!(p, 1:1000, sim.I, alpha=.5, label=nothing)
 	end
-	
+	mean_I = zeros(size(simulations[1].I))
+	for i in eachindex(mean_I)
+		Is_at_current_i = map(simulations) do s
+			s.I[i]
+		end
+		mean_I[i] = my_mean(Is_at_current_i)
+	end
+	plot!(p, 1:1000, mean_I, lw=3, alpha=1, label="Mean")
 	p
 end
 
