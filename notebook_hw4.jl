@@ -719,20 +719,16 @@ md"""
 In the cell below, we plot the evolution of the number of $I$ individuals as a function of time for each of the simulations on the same plot using transparency (`alpha=0.5` inside the plot command).
 """
 
-# ╔═╡ 9cd2bb00-04b1-11eb-1d83-a703907141a7
+# ╔═╡ ca8e82da-6d97-4f02-9c66-8fd63349458b
 let
 	p = plot()
 	
 	for sim in simulations
 		plot!(p, 1:1000, sim.I, alpha=.5, label=nothing)
 	end
-	mean_I = zeros(size(simulations[1].I))
-	for i in eachindex(mean_I)
-		Is_at_current_i = map(simulations) do s
-			s.I[i]
-		end
-		mean_I[i] = my_mean(Is_at_current_i)
-	end
+
+	n_sims = length(simulations)
+	mean_I = sum(s -> s.I, simulations) ./ n_sims
 	plot!(p, 1:1000, mean_I, lw=3, alpha=1, label="Mean")
 	p
 end
@@ -1238,7 +1234,7 @@ bigbreak
 # ╠═38b1aa5a-04cf-11eb-11a2-930741fc9076
 # ╠═80c2cd88-04b1-11eb-326e-0120a39405ea
 # ╟─80e6f1e0-04b1-11eb-0d4e-475f1d80c2bb
-# ╠═9cd2bb00-04b1-11eb-1d83-a703907141a7
+# ╠═ca8e82da-6d97-4f02-9c66-8fd63349458b
 # ╟─9cf9080a-04b1-11eb-12a0-17013f2d37f5
 # ╟─95c598d4-0403-11eb-2328-0175ed564915
 # ╠═843fd63c-04d0-11eb-0113-c58d346179d6
