@@ -742,8 +742,14 @@ md"""
 function sir_mean_plot(simulations::Vector{<:NamedTuple})
 	# you might need T for this function, here's a trick to get it:
 	T = length(first(simulations).S)
+	p = plot()
 	
-	return missing
+	n_sims = length(simulations)
+	for i_status in eachindex(first(simulations))
+		mean_i = sum(s -> getfield(s, i_status), simulations) ./ n_sims
+		plot!(p, 1:T, mean_i, lw=3, alpha=1, label="Mean type $(string(i_status))")
+	end
+	return p
 end
 
 # ╔═╡ 7f635722-04d0-11eb-3209-4b603c9e843c
