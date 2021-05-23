@@ -702,10 +702,10 @@ Every single simulation returns a named tuple with the status counts, so the res
 """
 
 # ╔═╡ 38b1aa5a-04cf-11eb-11a2-930741fc9076
-function repeat_simulations(N, T, infection, num_simulations)
+function repeat_simulations(f, N, T, infection, num_simulations)
 	
 	map(1:num_simulations) do _
-		simulation(N, T, infection)
+		f(N, T, infection)
 	end
 end
 
@@ -739,13 +739,13 @@ md"""
 """
 
 # ╔═╡ 1c6aa208-04d1-11eb-0b87-cf429e6ff6d0
-@bind p_infection Slider(0:0.05:1, show_value=true)
+@bind p_infection Slider(0:0.01:0.5, default=0.08, show_value=true)
 
 # ╔═╡ 19f75d2b-e35c-4475-a7b2-bc9d224075dc
-@bind p_recovery Slider(0:0.01:0.2, show_value=true)
+@bind p_recovery Slider(0:0.001:0.2, default=0.004, show_value=true)
 
 # ╔═╡ 80c2cd88-04b1-11eb-326e-0120a39405ea
-simulations = repeat_simulations(100, 1000, InfectionRecovery(p_infection, p_recovery), 50)
+simulations = repeat_simulations(simulation, 100, 1000, InfectionRecovery(p_infection, p_recovery), 20)
 
 # ╔═╡ ca8e82da-6d97-4f02-9c66-8fd63349458b
 let
@@ -805,7 +805,20 @@ md"""
 """
 
 # ╔═╡ 26e2978e-0435-11eb-0d61-25f552d2771e
+function num_infected_sim(N::Integer, T::Integer, infection::AbstractInfection)
 
+	agents = generate_agents(N)
+	for t in 1:T
+		sweep!(agents, infection)
+	end
+	return getfield.(agents, :num_infected)
+end
+
+# ╔═╡ c72e0b01-8730-4b24-aa1a-ba6e54326ad5
+frequencies_plot_with_mean(Iterators.flatten(repeat_simulations(num_infected_sim, 5000, 5000, InfectionRecovery(p_infection, p_recovery), 20)) |> collect)
+
+# ╔═╡ f9cff122-d647-4a3f-861a-4a5967922368
+md"""The distribution has an exponential decay shape."""
 
 # ╔═╡ 9635c944-0403-11eb-3982-4df509f6a556
 md"""
@@ -1271,6 +1284,8 @@ bigbreak
 # ╠═2efb95c6-0f45-4c6a-a808-a4046daea0f8
 # ╟─9611ca24-0403-11eb-3582-b7e3bb243e62
 # ╠═26e2978e-0435-11eb-0d61-25f552d2771e
+# ╠═c72e0b01-8730-4b24-aa1a-ba6e54326ad5
+# ╟─f9cff122-d647-4a3f-861a-4a5967922368
 # ╟─9635c944-0403-11eb-3982-4df509f6a556
 # ╠═4ad11052-042c-11eb-3643-8b2b3e1269bc
 # ╟─61c00724-0403-11eb-228d-17c11670e5d1
