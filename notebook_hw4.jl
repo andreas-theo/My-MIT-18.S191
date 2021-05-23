@@ -776,21 +776,19 @@ function sir_mean_error_plot(simulations::Vector{<:NamedTuple})
 	# you might need T for this function, here's a trick to get it:
 	T = length(first(simulations).S)
 	n_sims = length(simulations)
+	# define helper functions
 	fetch_means(i_status) = sum(getfield.(simulations, i_status)) ./ n_sims
 	my_std(v) = sqrt(sum((v .- my_mean(v)).^2) / length(v))
 	function fetch_std(i_status) 
 		sims_i_status = getfield.(simulations, i_status)
-		means = my_mean(sims_i_status)
-		σ = map(1:T) do i
-			sqrt.(sum(s -> (s[i] - means[i])^2, sims_i_status) ./ n_sims)
-		end
+		σ = my_std.([(s[i] for s in sims_i_status) for i in 1:T])
 		return σ
 	end
 	p = plot()
 	for i_status in eachindex(first(simulations))
 		mean_i = fetch_means(i_status)
 		σ = fetch_std(i_status)
-		plot!(p, 1:T, mean_i, yerr=σ, alpha=0.2, markerstrokecolor = :auto, label="Mean type $(string(i_status))")
+		plot!(p, 1:T, mean_i, ribbon=σ, lw=2, alpha=1, fillalpha=0.3, label="Mean type $(string(i_status))")
 	end
 	return p
 end
