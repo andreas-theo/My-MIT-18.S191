@@ -709,27 +709,10 @@ function repeat_simulations(N, T, infection, num_simulations)
 	end
 end
 
-# ╔═╡ 80c2cd88-04b1-11eb-326e-0120a39405ea
-simulations = repeat_simulations(100, 1000, InfectionRecovery(0.02, 0.002), 20)
-
 # ╔═╡ 80e6f1e0-04b1-11eb-0d4e-475f1d80c2bb
 md"""
 In the cell below, we plot the evolution of the number of $I$ individuals as a function of time for each of the simulations on the same plot using transparency (`alpha=0.5` inside the plot command).
 """
-
-# ╔═╡ ca8e82da-6d97-4f02-9c66-8fd63349458b
-let
-	p = plot()
-	
-	for sim in simulations
-		plot!(p, 1:1000, sim.I, alpha=.5, label=nothing)
-	end
-
-	n_sims = length(simulations)
-	mean_I = sum(s -> s.I, simulations) ./ n_sims
-	plot!(p, 1:1000, mean_I, lw=3, alpha=1, label="Mean")
-	p
-end
 
 # ╔═╡ 95c598d4-0403-11eb-2328-0175ed564915
 md"""
@@ -741,7 +724,7 @@ function sir_mean_plot(simulations::Vector{<:NamedTuple})
 	# you might need T for this function, here's a trick to get it:
 	T = length(first(simulations).S)
 	p = plot()
-	
+
 	n_sims = length(simulations)
 	for i_status in eachindex(first(simulations))
 		mean_i = sum(s -> getfield(s, i_status), simulations) ./ n_sims
@@ -750,16 +733,36 @@ function sir_mean_plot(simulations::Vector{<:NamedTuple})
 	return p
 end
 
-# ╔═╡ 7f635722-04d0-11eb-3209-4b603c9e843c
-sir_mean_plot(simulations)
-
 # ╔═╡ dfb99ace-04cf-11eb-0739-7d694c837d59
 md"""
 👉 Allow $p_\text{infection}$ and $p_\text{recovery}$ to be changed interactively and find parameter values for which you observe an epidemic outbreak.
 """
 
 # ╔═╡ 1c6aa208-04d1-11eb-0b87-cf429e6ff6d0
+@bind p_infection Slider(0:0.05:1, show_value=true)
 
+# ╔═╡ 19f75d2b-e35c-4475-a7b2-bc9d224075dc
+@bind p_recovery Slider(0:0.01:0.2, show_value=true)
+
+# ╔═╡ 80c2cd88-04b1-11eb-326e-0120a39405ea
+simulations = repeat_simulations(100, 1000, InfectionRecovery(p_infection, p_recovery), 50)
+
+# ╔═╡ ca8e82da-6d97-4f02-9c66-8fd63349458b
+let
+	p = plot()
+
+	for sim in simulations
+		plot!(p, 1:1000, sim.I, alpha=.5, label=nothing)
+	end
+
+	n_sims = length(simulations)
+	mean_I = sum(s -> s.I, simulations) ./ n_sims
+	plot!(p, 1:1000, mean_I, lw=3, alpha=1, label="Mean")
+	p
+end
+
+# ╔═╡ 7f635722-04d0-11eb-3209-4b603c9e843c
+sir_mean_plot(simulations)
 
 # ╔═╡ 95eb9f88-0403-11eb-155b-7b2d3a07cff0
 md"""
@@ -772,9 +775,28 @@ This should confirm that the distribution of $I$ at each step is pretty wide!
 function sir_mean_error_plot(simulations::Vector{<:NamedTuple})
 	# you might need T for this function, here's a trick to get it:
 	T = length(first(simulations).S)
-	
-	return missing
+	n_sims = length(simulations)
+	fetch_means(i_status) = sum(getfield.(simulations, i_status)) ./ n_sims
+	my_std(v) = sqrt(sum((v .- my_mean(v)).^2) / length(v))
+	function fetch_std(i_status) 
+		sims_i_status = getfield.(simulations, i_status)
+		means = my_mean(sims_i_status)
+		σ = map(1:T) do i
+			sqrt.(sum(s -> (s[i] - means[i])^2, sims_i_status) ./ n_sims)
+		end
+		return σ
+	end
+	p = plot()
+	for i_status in eachindex(first(simulations))
+		mean_i = fetch_means(i_status)
+		σ = fetch_std(i_status)
+		plot!(p, 1:T, mean_i, yerr=σ, alpha=0.2, markerstrokecolor = :auto, label="Mean type $(string(i_status))")
+	end
+	return p
 end
+
+# ╔═╡ 2efb95c6-0f45-4c6a-a808-a4046daea0f8
+sir_mean_error_plot(simulations)
 
 # ╔═╡ 9611ca24-0403-11eb-3582-b7e3bb243e62
 md"""
@@ -1245,8 +1267,10 @@ bigbreak
 # ╠═7f635722-04d0-11eb-3209-4b603c9e843c
 # ╟─dfb99ace-04cf-11eb-0739-7d694c837d59
 # ╠═1c6aa208-04d1-11eb-0b87-cf429e6ff6d0
+# ╠═19f75d2b-e35c-4475-a7b2-bc9d224075dc
 # ╟─95eb9f88-0403-11eb-155b-7b2d3a07cff0
 # ╠═287ee7aa-0435-11eb-0ca3-951dbbe69404
+# ╠═2efb95c6-0f45-4c6a-a808-a4046daea0f8
 # ╟─9611ca24-0403-11eb-3582-b7e3bb243e62
 # ╠═26e2978e-0435-11eb-0d61-25f552d2771e
 # ╟─9635c944-0403-11eb-3982-4df509f6a556
