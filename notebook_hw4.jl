@@ -703,8 +703,6 @@ Every single simulation returns a named tuple with the status counts, so the res
 
 # ╔═╡ 38b1aa5a-04cf-11eb-11a2-930741fc9076
 function repeat_simulations(N, T, infection, num_simulations)
-	N = 100
-	T = 1000
 	
 	map(1:num_simulations) do _
 		simulation(N, T, infection)
