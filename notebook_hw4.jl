@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.5
+# v0.14.7
 
 using Markdown
 using InteractiveUtils
@@ -539,35 +539,10 @@ md"""
 $(html"<span id=interactfunction></span>")
 """
 
-# ╔═╡ 406aabea-04a5-11eb-06b8-312879457c42
-function interact!(agent::Agent, source::Agent, infection::InfectionRecovery)
-	if is_susceptible(agent) && is_infected(source)
-		if bernoulli(infection.p_infection)
-			set_status!(agent, I)
-			set_num_infected!(source, source.num_infected+1)
-			end
-	elseif is_infected(agent)
-		if bernoulli(infection.p_recovery)
-			set_status!(agent, R)
-		end
-	end
-end
-
 # ╔═╡ b21475c6-04ac-11eb-1366-f3b5e967402d
 md"""
 Play around with the test case below to test your function! Try changing the definitions of `agent`, `source` and `infection`. Since we are working with randomness, you might want to run the cell multiple times.
 """
-
-# ╔═╡ 9c39974c-04a5-11eb-184d-317eb542452c
-let
-	agent = Agent(S, 0)
-	source = Agent(I, 0)
-	infection = InfectionRecovery(0.2, 0.6)
-	
-	interact!(agent, source, infection)
-	
-	(agent=agent, source=source)
-end
 
 # ╔═╡ 619c8a10-0403-11eb-2e89-8b0974fb01d0
 md"""
@@ -589,26 +564,10 @@ You should not use any global variables inside the functions: Each function must
 
 """
 
-# ╔═╡ 2ade2694-0425-11eb-2fb2-390da43d9695
-function step!(agents::Vector{Agent}, infection::AbstractInfection)
-	agent = rand(agents)
-	source = rand(agents)
-	interact!(agent, source, infection)
-	return agents
-end
-
 # ╔═╡ 955321de-0403-11eb-04ce-fb1670dfbb9e
 md"""
 👉 Write a function `sweep!`. It runs `step!` $N$ times, where $N$ is the number of agents. Thus each agent acts, on average, once per sweep; a sweep is thus the unit of time in our Monte Carlo simulation.
 """
-
-# ╔═╡ 46133a74-04b1-11eb-0b46-0bc74e564680
-function sweep!(agents::Vector{Agent}, infection::AbstractInfection)
-	N = length(agents)
-	for _ in 1:N
-		step!(agents, infection)
-	end
-end
 
 # ╔═╡ 95771ce2-0403-11eb-3056-f1dc3a8b7ec3
 md"""
@@ -625,42 +584,8 @@ You've seen an example of named tuples before: the `student` variable at the top
 _Feel free to store the counts in a different way, as long as the return type is the same._
 """
 
-# ╔═╡ 887d27fc-04bc-11eb-0ab9-eb95ef9607f8
-function simulation(N::Integer, T::Integer, infection::AbstractInfection)
-
-	agents = generate_agents(N)
-	S_counts, I_counts, R_counts = zeros(Int, T), zeros(Int, T), zeros(Int, T)
-	for t in 1:T
-		sweep!(agents, infection)
-		S_counts[t] = count(a -> is_susceptible(a), agents)
-		I_counts[t] = count(a -> is_infected(a), agents)
-		R_counts[t] = count(a -> a.status == R, agents)
-	end
-	
-	return (S=S_counts, I=I_counts, R=R_counts)
-end
-
-# ╔═╡ b92f1cec-04ae-11eb-0072-3535d1118494
-simulation(3, 20, InfectionRecovery(0.9, 0.2))
-
-# ╔═╡ 2c62b4ae-04b3-11eb-0080-a1035a7e31a2
-simulation(100, 1000, InfectionRecovery(0.005, 0.2))
-
 # ╔═╡ 28db9d98-04ca-11eb-3606-9fb89fa62f36
 @bind run_basic_sir Button("Run simulation again!")
-
-# ╔═╡ c5156c72-04af-11eb-1106-b13969b036ca
-let
-	run_basic_sir
-	
-	N = 100
-	T = 1000
-	sim = simulation(N, T, InfectionRecovery(0.02, 0.002))
-	
-	result = plot(1:T, sim.S, ylim=(0, N), label="Susceptible")
-	plot!(result, 1:T, sim.I, ylim=(0, N), label="Infectious")
-	plot!(result, 1:T, sim.R, ylim=(0, N), label="Recovered")
-end
 
 # ╔═╡ 0a967f38-0493-11eb-0624-77e40b24d757
 md"""
@@ -744,26 +669,6 @@ md"""
 # ╔═╡ 19f75d2b-e35c-4475-a7b2-bc9d224075dc
 @bind p_recovery Slider(0:0.001:0.2, default=0.004, show_value=true)
 
-# ╔═╡ 80c2cd88-04b1-11eb-326e-0120a39405ea
-simulations = repeat_simulations(simulation, 100, 1000, InfectionRecovery(p_infection, p_recovery), 20)
-
-# ╔═╡ ca8e82da-6d97-4f02-9c66-8fd63349458b
-let
-	p = plot()
-
-	for sim in simulations
-		plot!(p, 1:1000, sim.I, alpha=.5, label=nothing)
-	end
-
-	n_sims = length(simulations)
-	mean_I = sum(s -> s.I, simulations) ./ n_sims
-	plot!(p, 1:1000, mean_I, lw=3, alpha=1, label="Mean")
-	p
-end
-
-# ╔═╡ 7f635722-04d0-11eb-3209-4b603c9e843c
-sir_mean_plot(simulations)
-
 # ╔═╡ 95eb9f88-0403-11eb-155b-7b2d3a07cff0
 md"""
 👉 Write a function `sir_mean_error_plot` that does the same as `sir_mean_plot`, which also computes the **standard deviation** $\sigma$ of $S$, $I$, $R$ at each step. Add this to the plot using **error bars**, using the option `yerr=σ` in the plot command; use transparency.
@@ -793,9 +698,6 @@ function sir_mean_error_plot(simulations::Vector{<:NamedTuple})
 	return p
 end
 
-# ╔═╡ 2efb95c6-0f45-4c6a-a808-a4046daea0f8
-sir_mean_error_plot(simulations)
-
 # ╔═╡ 9611ca24-0403-11eb-3582-b7e3bb243e62
 md"""
 #### Exercise 3.3
@@ -803,19 +705,6 @@ md"""
 👉 Plot the probability distribution of `num_infected`. Does it have a recognisable shape? (Feel free to increase the number of agents in order to get better statistics.)
 
 """
-
-# ╔═╡ 26e2978e-0435-11eb-0d61-25f552d2771e
-function num_infected_sim(N::Integer, T::Integer, infection::AbstractInfection)
-
-	agents = generate_agents(N)
-	for t in 1:T
-		sweep!(agents, infection)
-	end
-	return getfield.(agents, :num_infected)
-end
-
-# ╔═╡ c72e0b01-8730-4b24-aa1a-ba6e54326ad5
-frequencies_plot_with_mean(Iterators.flatten(repeat_simulations(num_infected_sim, 5000, 5000, InfectionRecovery(p_infection, p_recovery), 20)) |> collect)
 
 # ╔═╡ f9cff122-d647-4a3f-861a-4a5967922368
 md"""The distribution has an exponential decay shape."""
@@ -828,7 +717,11 @@ md"""
 """
 
 # ╔═╡ 4ad11052-042c-11eb-3643-8b2b3e1269bc
-
+md"""
+1. The mean number of agents a single infected agent infects
+2. The mean time to recover
+3. The peak number of infected agents
+"""
 
 # ╔═╡ 61c00724-0403-11eb-228d-17c11670e5d1
 md"""
@@ -843,7 +736,136 @@ This new type `Reinfection` should also be a **subtype** of `AbstractInfection`.
 """
 
 # ╔═╡ 8dd97820-04a5-11eb-36c0-8f92d4b859a8
+struct Reinfection <: AbstractInfection
+	p_infection::Real
+	p_recovery::Real
+end
 
+# ╔═╡ 406aabea-04a5-11eb-06b8-312879457c42
+begin
+	function interact!(agent::Agent, source::Agent, infection::InfectionRecovery)
+		if is_susceptible(agent) && is_infected(source)
+			if bernoulli(infection.p_infection)
+				set_status!(agent, I)
+				set_num_infected!(source, source.num_infected+1)
+				end
+		elseif is_infected(agent)
+			if bernoulli(infection.p_recovery)
+				set_status!(agent, R)
+			end
+		end
+	end
+	
+	function interact!(agent::Agent, source::Agent, infection::Reinfection)
+		if is_susceptible(agent) && is_infected(source)
+			if bernoulli(infection.p_infection)
+				set_status!(agent, I)
+				set_num_infected!(source, source.num_infected+1)
+				end
+		elseif is_infected(agent)
+			if bernoulli(infection.p_recovery)
+				set_status!(agent, S)
+			end
+		end
+	end
+end
+
+# ╔═╡ 9c39974c-04a5-11eb-184d-317eb542452c
+let
+	agent = Agent(S, 0)
+	source = Agent(I, 0)
+	infection = InfectionRecovery(0.2, 0.6)
+	
+	interact!(agent, source, infection)
+	
+	(agent=agent, source=source)
+end
+
+# ╔═╡ 2ade2694-0425-11eb-2fb2-390da43d9695
+function step!(agents::Vector{Agent}, infection::AbstractInfection)
+	agent = rand(agents)
+	source = rand(agents)
+	interact!(agent, source, infection)
+	return agents
+end
+
+# ╔═╡ 46133a74-04b1-11eb-0b46-0bc74e564680
+function sweep!(agents::Vector{Agent}, infection::AbstractInfection)
+	N = length(agents)
+	for _ in 1:N
+		step!(agents, infection)
+	end
+end
+
+# ╔═╡ 887d27fc-04bc-11eb-0ab9-eb95ef9607f8
+function simulation(N::Integer, T::Integer, infection::AbstractInfection)
+
+	agents = generate_agents(N)
+	S_counts, I_counts, R_counts = zeros(Int, T), zeros(Int, T), zeros(Int, T)
+	for t in 1:T
+		sweep!(agents, infection)
+		S_counts[t] = count(a -> is_susceptible(a), agents)
+		I_counts[t] = count(a -> is_infected(a), agents)
+		R_counts[t] = count(a -> a.status == R, agents)
+	end
+	
+	return (S=S_counts, I=I_counts, R=R_counts)
+end
+
+# ╔═╡ b92f1cec-04ae-11eb-0072-3535d1118494
+simulation(3, 20, InfectionRecovery(0.9, 0.2))
+
+# ╔═╡ 2c62b4ae-04b3-11eb-0080-a1035a7e31a2
+simulation(100, 1000, InfectionRecovery(0.005, 0.2))
+
+# ╔═╡ c5156c72-04af-11eb-1106-b13969b036ca
+let
+	run_basic_sir
+	
+	N = 100
+	T = 1000
+	sim = simulation(N, T, InfectionRecovery(0.02, 0.002))
+	
+	result = plot(1:T, sim.S, ylim=(0, N), label="Susceptible")
+	plot!(result, 1:T, sim.I, ylim=(0, N), label="Infectious")
+	plot!(result, 1:T, sim.R, ylim=(0, N), label="Recovered")
+end
+
+# ╔═╡ 80c2cd88-04b1-11eb-326e-0120a39405ea
+simulations = repeat_simulations(simulation, 100, 1000, InfectionRecovery(p_infection, p_recovery), 20)
+
+# ╔═╡ ca8e82da-6d97-4f02-9c66-8fd63349458b
+let
+	p = plot()
+
+	for sim in simulations
+		plot!(p, 1:1000, sim.I, alpha=.5, label=nothing)
+	end
+
+	n_sims = length(simulations)
+	mean_I = sum(s -> s.I, simulations) ./ n_sims
+	plot!(p, 1:1000, mean_I, lw=3, alpha=1, label="Mean")
+	p
+end
+
+# ╔═╡ 7f635722-04d0-11eb-3209-4b603c9e843c
+sir_mean_plot(simulations)
+
+# ╔═╡ 2efb95c6-0f45-4c6a-a808-a4046daea0f8
+sir_mean_error_plot(simulations)
+
+# ╔═╡ 26e2978e-0435-11eb-0d61-25f552d2771e
+function num_infected_sim(N::Integer, T::Integer, infection::AbstractInfection)
+
+	agents = generate_agents(N)
+	for t in 1:T
+		sweep!(agents, infection)
+	end
+	return getfield.(agents, :num_infected)
+end
+
+# ╔═╡ c72e0b01-8730-4b24-aa1a-ba6e54326ad5
+frequencies_plot_with_mean(Iterators.flatten(repeat_simulations(num_infected_sim, 5000, 5000, InfectionRecovery(p_infection, p_recovery), 20)) |> collect)
 
 # ╔═╡ 99ef7b2a-0403-11eb-08ef-e1023cd151ae
 md"""
