@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.14.7
+# v0.19.0
 
 using Markdown
 using InteractiveUtils
@@ -7,8 +7,9 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
-        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
 end
@@ -885,7 +886,19 @@ Note that you should be able to re-use the `sweep!` and `simulation` functions ,
 """
 
 # ╔═╡ 1ac4b33a-0435-11eb-36f8-8f3f81ae7844
+simulations_reinfection = repeat_simulations(simulation, 100, 1000, Reinfection(p_infection, p_recovery), 20)
 
+# ╔═╡ db2d19bd-fcd8-4c4d-80ba-3372fbad9526
+let
+	p = plot()
+	for sim in simulations_reinfection
+		plot!(p, 1:1000, sim.I, alpha=.5, label=nothing)
+	end
+	n_sims = length(simulations_reinfection)
+	mean_I = sum(s -> s.I, simulations_reinfection) ./ n_sims
+	plot!(p, 1:1000, mean_I, lw=3, alpha=1, label="Mean")
+	p
+end
 
 # ╔═╡ 9a377b32-0403-11eb-2799-e7e59caa6a45
 md"""
@@ -894,8 +907,8 @@ md"""
 
 """
 
-# ╔═╡ 21c50840-0435-11eb-1307-7138ecde0691
-
+# ╔═╡ 55db7a20-3723-4ad3-a801-6390c058a252
+md"""No the mean number of infected indiciduals tends to a non-zero number (55)."""
 
 # ╔═╡ da49710e-0420-11eb-092e-4f1173868738
 md"""
@@ -1315,8 +1328,9 @@ bigbreak
 # ╟─99ef7b2a-0403-11eb-08ef-e1023cd151ae
 # ╟─9a13b17c-0403-11eb-024f-9b37e95e211b
 # ╠═1ac4b33a-0435-11eb-36f8-8f3f81ae7844
+# ╠═db2d19bd-fcd8-4c4d-80ba-3372fbad9526
 # ╟─9a377b32-0403-11eb-2799-e7e59caa6a45
-# ╠═21c50840-0435-11eb-1307-7138ecde0691
+# ╠═55db7a20-3723-4ad3-a801-6390c058a252
 # ╟─da49710e-0420-11eb-092e-4f1173868738
 # ╠═e6219c7c-0420-11eb-3faa-13126f7c8007
 # ╟─5689841e-0414-11eb-0492-63c77ddbd136
